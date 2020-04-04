@@ -15,19 +15,12 @@ namespace SuperSearchinator
         {
             IndexBuilder = new DictionaryIndexBuilder(EqualityComparer<string>.Default);
         }
-        public List<FileInfo> GetFiles() => FileCollector.Files;
-        public List<string> GetFileNames()
-        {
-            List<string> filePaths = new List<string>();
-            foreach (FileInfo file in GetFiles())
-                filePaths.Add(file.FullName);
-
-            return filePaths;
-        }
+        public List<string> GetFileNames() => FileCollector.FilePaths;
         public void AddFiles(string path)
         {
             FileCollector = new FileCollector(path);
-            _index = IndexBuilder.BuildIndexFromFiles(FileCollector.Files);
+            Console.WriteLine("Indexing for " + FileCollector.FilePaths.Count+" files.");
+            _index = IndexBuilder.BuildIndexFromFiles(FileCollector.FilePaths);
         }
         public List<SearchResult> Search(string word)
         {
@@ -179,13 +172,13 @@ namespace SuperSearchinator
     }
     public static class BuilderExtensions
     {
-        public static IWordIndex BuildIndexFromFiles(this IWordIndexBuilder builder, IEnumerable<FileInfo> wordFiles)
+        public static IWordIndex BuildIndexFromFiles(this IWordIndexBuilder builder, IEnumerable<string> wordFiles)
         {
             var wordSeparators = new char[] { ',', ' ', '\t', ';' /* etc */ };
             foreach (var file in wordFiles)
             {
                 var lineNumber = 1;
-                using (var reader = file.OpenText())
+                using (var reader = new StreamReader(file))
                 {
                     while (!reader.EndOfStream)
                     {
@@ -196,7 +189,7 @@ namespace SuperSearchinator
 
                         var wordIndex = 1;
                         foreach (var word in words)
-                            builder.AddWordOccurrence(word, file.FullName, lineNumber, wordIndex++);
+                            builder.AddWordOccurrence(word, file, lineNumber, wordIndex++);
 
                         lineNumber++;
                     }
